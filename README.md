@@ -1,0 +1,206 @@
+# Visible Managed Browser for AI Agents
+
+Give your AI agent full access to your live Chrome browser — existing tabs, saved logins, cookies, and all — without restarting Chrome, creating separate profiles, or re-authenticating anything.
+
+## Why This Exists
+
+Most AI agent browser tools launch a headless or isolated browser instance. That means:
+
+- No saved passwords or cookies — you re-login to everything
+- No access to already-open tabs
+- Bot detection flags headless Chrome immediately (eBay, Amazon, etc.)
+- You can't see what the agent is doing or intervene
+
+This setup uses the **Chrome DevTools MCP server** to attach your agent to your *already-running* Chrome session. You keep full visibility and control — the agent acts inside your real browser.
+
+## How It Works
+
+```
+Agent (Hermes/Claude/etc.)
+    ↕ MCP Protocol
+chrome-devtools-mcp server (Node.js)
+    ↕ Chrome DevTools Protocol
+Your running Chrome (v144+)
+    ↕
+Your real tabs, cookies, logins
+```
+
+The `chrome-devtools-mcp` server is an official Google project ([ChromeDevTools/chrome-devtools-mcp](https://github.com/ChromeDevTools/chrome-devtools-mcp)) that bridges the MCP (Model Context Protocol) to Chrome's DevTools Protocol. The `--autoConnect` flag (Chrome M144+) lets it attach to your running Chrome without requiring a debug port launch.
+
+## Prerequisites
+
+- **Chrome 144+** — check at `chrome://version`
+- **Node.js 20.19+** — `node --version`
+- An MCP-compatible agent (Hermes, Claude Desktop, Cursor, etc.)
+
+## Setup
+
+### 1. Enable Remote Debugging in Chrome
+
+1. Open Chrome
+2. Navigate to `chrome://inspect/#remote-debugging`
+3. Enable the "Discover network targets" toggle (if not already on)
+
+That's it. No Chrome restart needed, no special launch flags, no separate profile.
+
+### 2. Configure the MCP Server
+
+#### For Hermes Agent
+
+Add to `~/.hermes/config.yaml` under `mcp_servers`:
+
+```yaml
+mcp_servers:
+  chrome-devtools:
+    command: npx
+    args:
+      - -y
+      - chrome-devtools-mcp@latest
+      - --autoConnect
+      - --no-usage-statistics
+    timeout: 120
+    connect_timeout: 60
+```
+
+Then restart the gateway:
+```bash
+hermes gateway restart
+```
+
+#### For Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect", "--no-usage-statistics"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop.
+
+#### For Cursor
+
+Add to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect", "--no-usage-statistics"]
+    }
+  }
+}
+```
+
+### 3. Approve the Connection
+
+On first use, Chrome will show a consent prompt asking you to approve the remote debugging attachment. Click **Allow**.
+
+This is your security gate — the agent can't connect to your browser without your explicit approval each session.
+
+### 4. Verify It Works
+
+Ask your agent to list browser tabs. If it returns your open Chrome tabs, you're connected.
+
+## What the Agent Can Do
+
+Once connected, the agent gets ~29 tools including:
+
+| Capability | Examples |
+|-----------|----------|
+| **Navigation** | Go to URL, open new tabs, close tabs, switch between tabs |
+| **Interaction** | Click elements, fill forms, type text, hover, drag, press keys |
+| **Inspection** | Take snapshots (accessibility tree), screenshots, read console, monitor network |
+| **JavaScript** | Execute arbitrary JS in the page context |
+| **Performance** | Run Lighthouse audits, performance traces |
+| **File handling** | Upload files to page inputs |
+
+## The Journey: How We Got Here
+
+### Attempt 1: Raw CDP (The Hard Way)
+
+```bash
+# Had to fully quit Chrome first
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir=/tmp/chrome-debug-profile &
+```
+
+**Problems:**
+- Chrome must be fully closed first — can't run alongside your normal browser
+- `--user-data-dir` is mandatory (Chrome's multi-profile chooser locks the default directory)
+- Separate profile = no existing logins, no cookies, no saved passwords
+- Had to use `127.0.0.1` not `localhost` (macOS IPv6 resolution issue)
+- Manual credential management via `.env` files for sites with expiring cookies
+
+### Attempt 2: MCP Chrome DevTools (The Easy Way)
+
+```yaml
+mcp_servers:
+  chrome-devtools:
+    command: npx
+    args: ["-y", "chrome-devtools-mcp@latest", "--autoConnect"]
+```
+
+**What changed:**
+- No Chrome restart — attaches to your running session
+- All your existing tabs, cookies, and logins are immediately available
+- User approval prompt provides a security gate
+- Official Google project, well-maintained
+- Works with Chrome, Brave, Edge, and other Chromium browsers
+
+## Limitations
+
+- **Chrome 144+ required** — older versions don't support `--autoConnect`
+- **Left-click only** — no right-click or middle-click
+- **Text entered all at once** — no "type slowly" option
+- **No batch actions** — each interaction is a separate tool call
+- **No download/PDF interception** — browser handles these natively
+- **Chrome must stay running** — if Chrome closes, all browser tools fail
+- **Snapshot refs change** — element UIDs update after navigation or major DOM changes; re-snapshot after actions
+- **User must approve** — first attach requires manual consent in Chrome
+
+## Security Considerations
+
+This setup gives the agent full access to your real browser session. That means:
+
+- The agent can see your open tabs and their content
+- The agent acts with your cookies and authentication state
+- Destructive actions (closing tabs, navigating away, submitting forms) affect your real browser
+- You should monitor the browser during sensitive operations
+
+The Chrome consent prompt on each session is your primary security gate. If you don't approve, the agent can't connect.
+
+## Tips
+
+1. **Pin important tabs** — the agent can identify tabs by title/URL, so descriptive tab names help
+2. **Keep Chrome visible** — part of the value is watching what the agent does
+3. **Use for bot-sensitive sites** — this approach passes anti-bot checks that headless browsers fail (eBay, Amazon, etc.)
+4. **The `--no-usage-statistics` flag** — prevents the MCP server from sending telemetry to Google
+
+## Troubleshooting
+
+**Agent can't find Chrome:**
+- Verify remote debugging is enabled at `chrome://inspect/#remote-debugging`
+- Check Chrome version is 144+: `chrome://version`
+
+**Connection hangs:**
+- Look for the Chrome consent prompt — it might be hidden behind other windows
+- Try restarting the MCP server (restart your agent's gateway)
+
+**Agent reports "no pages":**
+- Make sure Chrome has at least one tab open
+- The MCP server needs a page context to attach to
+
+## Related
+
+- [chrome-devtools-mcp GitHub](https://github.com/ChromeDevTools/chrome-devtools-mcp) — the MCP server
+- [Model Context Protocol](https://modelcontextprotocol.io/) — the protocol spec
+- [Hermes Agent](https://github.com/niceape/hermes-agent) — the agent framework this was built for
