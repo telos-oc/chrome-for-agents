@@ -15,6 +15,18 @@ Most AI agent browser tools launch a headless or isolated browser instance. That
 
 This setup uses the **Chrome DevTools MCP server** to attach your agent to your *already-running* Chrome session. You keep full visibility and control — the agent acts inside your real browser.
 
+## Human-in-the-Loop: Your Secret Weapon
+
+Because the browser is *yours* — visible, real, and running — you can jump in at any moment. This is the biggest advantage over headless approaches:
+
+- **CAPTCHAs** — Agent hits a CAPTCHA? You click the checkbox. It's sitting right there in your browser.
+- **Anti-bot challenges** — Cloudflare, Incapsula, and similar protections see a real Chrome session with real cookies and browsing history. No fingerprint spoofing needed.
+- **Credential entry** — 2FA prompts, password managers, biometric auth — your meat-sack appendages handle what silicon can't.
+- **Approval gates** — See exactly what the agent is about to submit before it happens. Your mouse is right there.
+- **Recovery** — Agent gets stuck on an unexpected modal or popup? You dismiss it and let it continue.
+
+This isn't a workaround — it's the architecture. The agent drives, you co-pilot. Headless browsers try to solve these problems with increasingly fragile automation. We just let the human be human.
+
 ## How It Works
 
 ```
