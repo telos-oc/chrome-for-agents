@@ -107,6 +107,8 @@ Add to your MCP configuration:
 
 On first use, Chrome will show a consent prompt asking you to approve the remote debugging attachment. Click **Allow**.
 
+> **Note:** This approval prompt may reappear after restarting your Mac or Chrome — it's a one-time consent per session, not a permanent grant. Just click Allow again when it pops up.
+
 This is your security gate — the agent can't connect to your browser without your explicit approval each session.
 
 ### 4. Verify It Works
@@ -197,6 +199,7 @@ The Chrome consent prompt on each session is your primary security gate. If you 
 
 **Connection hangs:**
 - Look for the Chrome consent prompt — it might be hidden behind other windows
+- The consent prompt reappears after Mac/Chrome restarts — click Allow again
 - Try restarting the MCP server (restart your agent's gateway)
 
 **Agent reports "no pages":**
