@@ -1,6 +1,8 @@
-# Visible Managed Browser for AI Agents
+# Chrome for Agents
 
 Give your AI agent full access to your live Chrome browser — existing tabs, saved logins, cookies, and all — without restarting Chrome, creating separate profiles, or re-authenticating anything.
+
+![YOLO Chrome for agents](assets/action-shot.png)
 
 ## Why This Exists
 
@@ -40,6 +42,8 @@ The `chrome-devtools-mcp` server is an official Google project ([ChromeDevTools/
 1. Open Chrome
 2. Navigate to `chrome://inspect/#remote-debugging`
 3. Enable the "Discover network targets" toggle (if not already on)
+
+![Chrome remote debugging page](assets/chrome-inspect.png)
 
 That's it. No Chrome restart needed, no special launch flags, no separate profile.
 
@@ -203,4 +207,6 @@ The Chrome consent prompt on each session is your primary security gate. If you 
 
 - [chrome-devtools-mcp GitHub](https://github.com/ChromeDevTools/chrome-devtools-mcp) — the MCP server
 - [Model Context Protocol](https://modelcontextprotocol.io/) — the protocol spec
-- [Hermes Agent](https://github.com/niceape/hermes-agent) — the agent framework this was built for
+- [Hermes Agent](https://hermes-agent.nousresearch.com) — the agent framework this was built for
+
+![Hermes Agent by Nous Research](assets/nous-agent.png)
