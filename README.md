@@ -49,7 +49,33 @@ The `chrome-devtools-mcp` server is an official Google project ([ChromeDevTools/
 
 ## Setup
 
-### 1. Enable Remote Debugging in Chrome
+### Fastest install (Hermes)
+
+Run this one-liner:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/telos-oc/chrome-for-agents/main/install-hermes.sh | bash
+```
+
+What it does:
+- Checks **Python 3**, **Node.js 20.19+**, **npx**, **Hermes**, and **Chrome/Chromium 144+**
+- Adds or updates the `chrome-devtools` MCP server in `~/.hermes/config.yaml`
+- Verifies the config was written correctly
+- Verifies `chrome-devtools-mcp@latest` resolves via `npx`
+- Restarts the Hermes gateway
+
+The installer is **idempotent** — re-running it updates the managed `chrome-devtools` entry without duplicating it.
+
+If you prefer to inspect the script before running it:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/telos-oc/chrome-for-agents/main/install-hermes.sh -o install-hermes.sh
+bash install-hermes.sh
+```
+
+### Manual install (Hermes)
+
+#### 1. Enable Remote Debugging in Chrome
 
 1. Open Chrome
 2. Navigate to `chrome://inspect/#remote-debugging`
@@ -59,9 +85,7 @@ The `chrome-devtools-mcp` server is an official Google project ([ChromeDevTools/
 
 That's it. No Chrome restart needed, no special launch flags, no separate profile.
 
-### 2. Configure the MCP Server
-
-#### For Hermes Agent
+#### 2. Configure the MCP Server
 
 Add to `~/.hermes/config.yaml` under `mcp_servers`:
 
@@ -83,49 +107,23 @@ Then restart the gateway:
 hermes gateway restart
 ```
 
-#### For Claude Desktop
+### Verify It Works
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+1. Open Chrome to `chrome://inspect/#remote-debugging`
+2. Make sure **Discover network targets** is enabled
+3. Keep at least one Chrome tab open
+4. Ask Hermes to list browser tabs
+5. When Chrome shows the consent prompt, click **Allow**
 
-```json
-{
-  "mcpServers": {
-    "chrome-devtools": {
-      "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect", "--no-usage-statistics"]
-    }
-  }
-}
-```
+If Hermes returns your existing Chrome tabs, you're connected.
 
-Restart Claude Desktop.
-
-#### For Cursor
-
-Add to your MCP configuration:
-
-```json
-{
-  "mcpServers": {
-    "chrome-devtools": {
-      "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect", "--no-usage-statistics"]
-    }
-  }
-}
-```
-
-### 3. Approve the Connection
+### Approve the Connection
 
 On first use, Chrome will show a consent prompt asking you to approve the remote debugging attachment. Click **Allow**.
 
 > **Note:** This approval prompt may reappear after restarting your Mac or Chrome — it's a one-time consent per session, not a permanent grant. Just click Allow again when it pops up.
 
 This is your security gate — the agent can't connect to your browser without your explicit approval each session.
-
-### 4. Verify It Works
-
-Ask your agent to list browser tabs. If it returns your open Chrome tabs, you're connected.
 
 ## What the Agent Can Do
 
